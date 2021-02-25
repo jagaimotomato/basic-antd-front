@@ -145,7 +145,7 @@ export const generator = (routerMap, parent) => {
       }
     }
     // 是否设置了隐藏菜单
-    if (item.show === false) {
+    if (item.show === 0) {
       currentRouter.hidden = true
     }
     // 是否设置了隐藏子菜单
