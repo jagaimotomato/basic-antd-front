@@ -1,6 +1,6 @@
 <template>
   <a-card :bordered="false">
-    <div v-action:query class="table-page-search-wrapper" style="margin-bottom: 15px">
+    <div v-action:query_dicttype class="table-page-search-wrapper" style="margin-bottom: 15px">
       <a-form layout="inline">
         <a-row :gutter="48">
           <a-col :md="5" :sm="24">
@@ -100,10 +100,10 @@
             更多 <a-icon type="down" />
           </a>
           <a-menu slot="overlay">
-            <a-menu-item v-action:get>
+            <a-menu-item v-action:detail_dicttype>
               <a href="javascript:;" @click="handleGet(record)">详情</a>
             </a-menu-item>
-            <a-menu-item v-action:del>
+            <a-menu-item v-action:del_dicttype>
               <a href="javascript:;" @click="handleDel(record)">删除</a>
             </a-menu-item>
           </a-menu>

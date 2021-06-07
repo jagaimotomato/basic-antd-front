@@ -28,5 +28,8 @@ export const api = {
   DictByType: '/other/dictData/',
   /* log */
   LoginLogPage: '/page/loginLog',
-  OperationLogPage: '/page/operationLog'
+  OperationLogPage: '/page/operationLog',
+  /* account */
+  Account: '/account',
+  AccountPas: '/account/password'
 }

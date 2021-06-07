@@ -55,113 +55,123 @@
 
 </template>
 <script>
-export default {
-  data () {
-    return {
-      visible: false,
-      id: null,
-      confirmLoading: false,
-      fileList: [],
-      uploading: false,
-      options: {
-        // img: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
-        img: '',
-        autoCrop: true,
-        autoCropWidth: 200,
-        autoCropHeight: 200,
-        fixedBox: true
+  export default {
+    props: {
+      url: {
+        type: String,
+        default: () => {
+          return ''
+        }
+      }
+    },
+    data () {
+      return {
+        visible: false,
+        id: null,
+        confirmLoading: false,
+        fileList: [],
+        uploading: false,
+        options: {
+          // img: 'https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png',
+          img: this.url,
+          autoCrop: true,
+          autoCropWidth: 200,
+          autoCropHeight: 200,
+          fixedBox: true,
+          outputType: 'jpeg'
+        },
+        previews: {}
+      }
+    },
+    methods: {
+      edit (id) {
+        this.visible = true
+        this.id = id
+        /* 获取原始头像 */
       },
-      previews: {}
-    }
-  },
-  methods: {
-    edit (id) {
-      this.visible = true
-      this.id = id
-      /* 获取原始头像 */
-    },
-    close () {
-      this.id = null
-      this.visible = false
-    },
-    cancelHandel () {
-      this.close()
-    },
-    changeScale (num) {
-      num = num || 1
-      this.$refs.cropper.changeScale(num)
-    },
-    rotateLeft () {
-      this.$refs.cropper.rotateLeft()
-    },
-    rotateRight () {
-      this.$refs.cropper.rotateRight()
-    },
-    beforeUpload (file) {
-      const reader = new FileReader()
-      // 把Array Buffer转化为blob 如果是base64不需要
-      // 转化为base64
-      reader.readAsDataURL(file)
-      reader.onload = () => {
-        this.options.img = reader.result
+      close () {
+        this.id = null
+        this.visible = false
+      },
+      cancelHandel () {
+        this.close()
+      },
+      changeScale (num) {
+        num = num || 1
+        this.$refs.cropper.changeScale(num)
+      },
+      rotateLeft () {
+        this.$refs.cropper.rotateLeft()
+      },
+      rotateRight () {
+        this.$refs.cropper.rotateRight()
+      },
+      beforeUpload (file) {
+        const reader = new FileReader()
+        // 把Array Buffer转化为blob 如果是base64不需要
+        // 转化为base64
+        reader.readAsDataURL(file)
+        reader.onload = () => {
+          this.options.img = reader.result
+        }
+        // 转化为blob
+        // reader.readAsArrayBuffer(file)
+
+        return false
+      },
+
+      // 上传图片（点击上传按钮）
+      finish (type) {
+        console.log('finish')
+        const _this = this
+        const formData = new FormData()
+        // 输出
+        if (type === 'blob') {
+          this.$refs.cropper.getCropBlob((data) => {
+            const img = window.URL.createObjectURL(data)
+            this.model = true
+            this.modelSrc = img
+            formData.append('file', data, 'avatar.jpg')
+            formData.append('type', '3')
+            this.$http.post(process.env.VUE_APP_API_BASE_URL + '/upload', formData)
+              .then((response) => {
+                console.log('upload response:', response)
+                // var res = response.data
+                // if (response.status === 'done') {
+                //   _this.imgFile = ''
+                //   _this.headImg = res.realPathList[0] // 完整路径
+                //   _this.uploadImgRelaPath = res.relaPathList[0] // 非完整路径
+                //   _this.$message.success('上传成功')
+                //   this.visible = false
+                // }
+                _this.$message.success('上传成功')
+                _this.$emit('ok', response.result.path)
+                _this.visible = false
+              })
+          })
+        } else {
+          this.$refs.cropper.getCropData((data) => {
+            this.model = true
+            this.modelSrc = data
+          })
+        }
+      },
+      okHandel () {
+        const vm = this
+
+        vm.confirmLoading = true
+        setTimeout(() => {
+          vm.confirmLoading = false
+          vm.close()
+          vm.$message.success('上传头像成功')
+        }, 2000)
+      },
+
+      realTime (data) {
+        this.previews = data
       }
-      // 转化为blob
-      // reader.readAsArrayBuffer(file)
-
-      return false
-    },
-
-    // 上传图片（点击上传按钮）
-    finish (type) {
-      console.log('finish')
-      const _this = this
-      const formData = new FormData()
-      // 输出
-      if (type === 'blob') {
-        this.$refs.cropper.getCropBlob((data) => {
-          const img = window.URL.createObjectURL(data)
-          this.model = true
-          this.modelSrc = img
-          formData.append('file', data, this.fileName)
-          this.$http.post('https://www.mocky.io/v2/5cc8019d300000980a055e76', formData, { contentType: false, processData: false, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
-            .then((response) => {
-              console.log('upload response:', response)
-              // var res = response.data
-              // if (response.status === 'done') {
-              //   _this.imgFile = ''
-              //   _this.headImg = res.realPathList[0] // 完整路径
-              //   _this.uploadImgRelaPath = res.relaPathList[0] // 非完整路径
-              //   _this.$message.success('上传成功')
-              //   this.visible = false
-              // }
-              _this.$message.success('上传成功')
-              _this.$emit('ok', response.url)
-              _this.visible = false
-            })
-        })
-      } else {
-        this.$refs.cropper.getCropData((data) => {
-          this.model = true
-          this.modelSrc = data
-        })
-      }
-    },
-    okHandel () {
-      const vm = this
-
-      vm.confirmLoading = true
-      setTimeout(() => {
-        vm.confirmLoading = false
-        vm.close()
-        vm.$message.success('上传头像成功')
-      }, 2000)
-    },
-
-    realTime (data) {
-      this.previews = data
     }
   }
-}
 </script>
 
 <style lang="less" scoped>

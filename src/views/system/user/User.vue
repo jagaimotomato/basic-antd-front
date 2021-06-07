@@ -1,6 +1,6 @@
 <template>
   <a-card :bordered="false">
-    <div v-action:query class="table-page-search-wrapper" style="margin-bottom: 15px">
+    <div v-action:query_user class="table-page-search-wrapper" style="margin-bottom: 15px">
       <a-form layout="inline">
         <a-row :gutter="48">
           <a-col :md="5" :sm="24">
@@ -25,6 +25,7 @@
             type="primary"
             icon="plus"
             @click="handleAdd"
+            v-action:add_user
           >
             新增
           </a-button>
@@ -34,6 +35,7 @@
             icon="edit"
             :disabled="single"
             @click="handleEdit"
+            v-action:edit_user
           >
             修改
           </a-button>
@@ -43,6 +45,7 @@
             icon="delete"
             :disabled="multiple"
             @click="handleDel"
+            v-action:del_user
           >
             删除
           </a-button>

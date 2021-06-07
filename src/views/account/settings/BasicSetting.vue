@@ -3,29 +3,41 @@
     <a-row :gutter="16">
       <a-col :md="24" :lg="16">
 
-        <a-form layout="vertical">
-          <a-form-item
+        <a-form-model layout="vertical" :rules="rules">
+          <a-form-model-item
             :label="$t('account.settings.basic.nickname')"
+            prop="name"
           >
-            <a-input :placeholder="$t('account.settings.basic.nickname-message')" />
-          </a-form-item>
-          <a-form-item
+            <a-input v-model="form.name" :placeholder="$t('account.settings.basic.nickname-message')" />
+          </a-form-model-item>
+          <a-form-model-item
             :label="$t('account.settings.basic.profile')"
+            prop="bio"
           >
-            <a-textarea rows="4" :placeholder="$t('account.settings.basic.profile-message')"/>
-          </a-form-item>
-
-          <a-form-item
+            <a-textarea v-model="form.bio" rows="4" :placeholder="$t('account.settings.basic.profile-message')"/>
+          </a-form-model-item>
+          <a-form-model-item
+            label="性别"
+            prop="sex"
+          >
+            <a-radio-group name="sex" v-model="form.sex">
+              <a-radio v-for="(item, index) in sex" :value="item.value" :key="index">
+                <img v-if="item.value === '1'" style="width: 12px" src="@/assets/system/male.png" alt="">
+                <img v-else style="width: 10px" src="@/assets/system/female.png" alt="">
+              </a-radio>
+            </a-radio-group>
+          </a-form-model-item>
+          <a-form-model-item
             :label="$t('account.settings.basic.email')"
             :required="false"
           >
-            <a-input placeholder="example@ant.design"/>
-          </a-form-item>
+            <a-input v-model="form.email" placeholder="example@ant.design"/>
+          </a-form-model-item>
 
           <a-form-item>
-            <a-button type="primary">{{ $t('account.settings.basic.update') }}</a-button>
+            <a-button @click="updateAccount()" type="primary">{{ $t('account.settings.basic.update') }}</a-button>
           </a-form-item>
-        </a-form>
+        </a-form-model>
 
       </a-col>
       <a-col :md="24" :lg="8" :style="{ minHeight: '180px' }">
@@ -40,45 +52,95 @@
 
     </a-row>
 
-    <avatar-modal ref="modal" @ok="setavatar"/>
+    <avatar-modal ref="modal" :url="option.img" @ok="setavatar"/>
 
   </div>
 </template>
 
 <script>
-import AvatarModal from './AvatarModal'
+  import AvatarModal from './AvatarModal'
+  import { get, update } from '@/api/system/account'
 
-export default {
-  components: {
-    AvatarModal
-  },
-  data () {
-    return {
-      // cropper
-      preview: {},
-      option: {
-        img: '/avatar2.jpg',
-        info: true,
-        size: 1,
-        outputType: 'jpeg',
-        canScale: false,
-        autoCrop: true,
-        // 只有自动截图开启 宽度高度才生效
-        autoCropWidth: 180,
-        autoCropHeight: 180,
-        fixedBox: true,
-        // 开启宽度和高度比例
-        fixed: true,
-        fixedNumber: [1, 1]
+  export default {
+    components: {
+      AvatarModal
+    },
+    data () {
+      return {
+        // cropper
+        preview: {},
+        option: {
+          img: '/avatar2.jpg',
+          info: true,
+          size: 1,
+          outputType: 'jpeg',
+          canScale: false,
+          autoCrop: true,
+          // 只有自动截图开启 宽度高度才生效
+          autoCropWidth: 200,
+          autoCropHeight: 200,
+          fixedBox: true,
+          // 开启宽度和高度比例
+          fixed: true,
+          fixedNumber: [1, 1]
+        },
+        form: {},
+        sex: [], // 性别列表
+        rules: {
+          name: [
+            { min: 1, max: 20, message: '长度在1到20个字符', trigger: 'blur' }
+          ],
+          email: [
+            {
+              type: 'email',
+              message: "'请输入正确的邮箱地址",
+              trigger: ['blur', 'change']
+            }
+          ],
+          bio: [
+            { min: 5, max: 100, message: '长度在5到100个字符', trigger: 'blur' }
+          ]
+        }
+      }
+    },
+    created () {
+      this.getUser()
+      this.getDict('sys_sex').then(res => {
+        this.sex = res.result.list
+        console.log(res.result)
+      })
+    },
+    methods: {
+      setavatar (url) {
+        this.option.img = process.env.VUE_APP_API_BASE_URL + '/' + url
+        this.form.avatar = url
+        this.updateAccount()
+      },
+      getUser () {
+        get().then(res => {
+          this.form = res.result
+          this.option.img = process.env.VUE_APP_API_BASE_URL + '/' + res.result.avatar
+        })
+      },
+      updateAccount () {
+        const data = {
+          name: this.form.name,
+          bio: this.form.bio,
+          sex: this.form.sex,
+          email: this.form.email,
+          avatar: this.form.avatar
+        }
+        update(data).then(res => {
+          if (res.code === 200) {
+            this.getUser()
+            this.$message.success('修改成功')
+          } else {
+            this.$message.error(res.message)
+          }
+        })
       }
     }
-  },
-  methods: {
-    setavatar (url) {
-      this.option.img = url
-    }
   }
-}
 </script>
 
 <style lang="less" scoped>

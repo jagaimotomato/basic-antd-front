@@ -3,7 +3,7 @@
     <div class="table-page-search-wrapper" style="margin-bottom: 15px">
       <a-form layout="inline">
         <a-row :gutter="48">
-          <a-col :md="5" :sm="24" v-action:query>
+          <a-col :md="5" :sm="24" v-action:query_permission>
             <a-form-item label="菜单">
               <a-input
                 v-model="queryParam.title"
@@ -36,9 +36,9 @@
         <a-icon :type="record.icon" style="font-size: 16px" />
       </span>
 
-      <span slot="actions" slot-scope="text, record">
+      <!-- <span slot="actions" slot-scope="text, record">
         <a-tag v-for="(action, index) in record.actionList" :key="index">{{ action.title }}</a-tag>
-      </span>
+      </span> -->
 
       <span slot="action" slot-scope="text, record">
         <a @click="handleEdit(record)">编辑</a>
@@ -209,21 +209,11 @@
               :labelCol="labelCol"
               :wrapperCol="wrapperCol"
             >
-              <a-select
-                placeholder="请选择action"
-                v-model="form.action"
-                @change="selectChange"
-                :disabled="disabled"
-                mode="multiple"
-              >
-                <a-select-option
-                  v-if="actions.length > 0"
-                  v-for="item in actions"
-                  :key="item.value"
-                  :value="item.value"
-                >
-                  {{ item.label }}
-                </a-select-option>
+              <a-select v-model="form.actions">
+                <a-select-option value="GET">GET</a-select-option>
+                <a-select-option value="POST">POST</a-select-option>
+                <a-select-option value="DEL">DEL</a-select-option>
+                <a-select-option value="PUT">PUT</a-select-option>
               </a-select>
             </a-form-model-item>
           </a-col>
@@ -382,16 +372,20 @@ export default {
           dataIndex: 'name'
         },
         {
+          title: '路径',
+          dataIndex: 'path'
+        },
+        {
           title: '菜单icon',
           dataIndex: 'icon',
           align: 'center',
           scopedSlots: { customRender: 'icon' }
         },
-        {
+        /* {
           title: '可操作权限',
           dataIndex: 'actions',
           scopedSlots: { customRender: 'actions' }
-        },
+        }, */
         {
           title: '排序',
           align: 'center',
@@ -444,16 +438,11 @@ export default {
         parentId: [ { required: true, message: '请选择父级菜单', trigger: 'blur' } ]
       },
       /* 详情禁用表单 */
-      disabled: false,
-      actions: []
+      disabled: false
     }
   },
   watch: {},
   created () {
-    this.getDict('sys_action').then(res => {
-      this.actions = res.result.list
-      console.log(res.result)
-    })
   },
   methods: {
     handleEdit (record) {
@@ -580,27 +569,6 @@ export default {
         this.disabled = true
         this.visible = true
       })
-    },
-    selectChange (value, option) {
-      // console.log(this.actions.filter(item => item.value === value))
-      // console.log(value)
-      if (value.length > 0) {
-        this.form.actionUpload = []
-        for (let i = 0; i < value.length; i++) {
-          this.actions.forEach(item => {
-            if (value[i] === item.value) {
-              const data = {
-                label: item.label,
-                value: item.value
-              }
-              this.form.actionUpload.push(data)
-            }
-          })
-        }
-        // console.log(this.form.actionUpload)
-      }
-      // this.form.describe = arr[0].label
-      // console.log(value, option)
     }
   }
 }

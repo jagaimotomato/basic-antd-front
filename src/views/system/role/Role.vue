@@ -1,7 +1,7 @@
 <template>
   <a-card :bordered="false">
     <div class="table-page-search-wrapper" style="margin-bottom: 15px">
-      <a-form-model layout="inline" v-action:query>
+      <a-form-model layout="inline" v-action:query_role>
         <a-row :gutter="48">
           <a-col :md="6" :sm="24">
             <a-form-model-item label="角色名称" prop="name">
@@ -46,7 +46,7 @@
       </a-form-model>
       <a-row :gutter="10">
         <a-button
-          v-action:add
+          v-action:add_role
           type="primary"
           icon="plus"
           @click="handleAdd"
@@ -54,7 +54,7 @@
           新增
         </a-button>
         <a-button
-          v-action:edit
+          v-action:edit_role
           style="margin-left: 8px"
           type="primary"
           icon="edit"
@@ -64,7 +64,7 @@
           修改
         </a-button>
         <a-button
-          v-action:del
+          v-action:del_role
           style="margin-left: 8px"
           type="primary"
           icon="delete"
@@ -126,10 +126,10 @@
             更多 <a-icon type="down" />
           </a>
           <a-menu slot="overlay">
-            <a-menu-item v-action:get>
+            <a-menu-item v-action:detail_role>
               <a href="javascript:;" @click="handleGet(record)">详情</a>
             </a-menu-item>
-            <a-menu-item v-action:del>
+            <a-menu-item v-action:del_role>
               <a href="javascript:;" @click="handleDel(record)">删除</a>
             </a-menu-item>
           </a-menu>
