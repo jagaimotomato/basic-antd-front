@@ -31,5 +31,10 @@ export const api = {
   OperationLogPage: '/page/operationLog',
   /* account */
   Account: '/account',
-  AccountPas: '/account/password'
+  AccountPas: '/account/password',
+  /* api */
+  Api: '/api',
+  ApiPage: '/page/api',
+  ApiList: '/list/api',
+  CasbinList: '/list/casbin'
 }

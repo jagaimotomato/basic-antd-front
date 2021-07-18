@@ -68,7 +68,8 @@ const constantRouterComponents = {
   'DictType': () => import('@/views/system/dict/DictType'),
   'DictData': () => import('@/views/system/dict/DictData'),
   'LoginLog': () => import('@/views/system/log/LoginLog'),
-  'OperationLog': () => import('@/views/system/log/OperationLog')
+  'OperationLog': () => import('@/views/system/log/OperationLog'),
+  'Api': () => import('@/views/system/api/Index')
 }
 
 // 前端未找到页面路由（固定不用改）

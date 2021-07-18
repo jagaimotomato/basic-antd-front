@@ -230,7 +230,7 @@
                   this.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             } else {
@@ -240,7 +240,7 @@
                   this.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             }
@@ -272,7 +272,7 @@
             this.$message.success('删除成功')
           } else {
             this.$message.error({
-              message: res.message
+              message: res.msg
             })
           }
         })

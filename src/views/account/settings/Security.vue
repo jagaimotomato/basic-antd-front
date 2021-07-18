@@ -236,9 +236,9 @@
                 this.form = res.result
                 this.visible = false
               } else if (res.code === 403) {
-                this.$message.error(res.message)
+                this.$message.error(res.msg)
               } else {
-                this.$message.error(res.message)
+                this.$message.error(res.msg)
               }
             })
           }

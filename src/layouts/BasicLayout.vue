@@ -13,7 +13,6 @@
       广告代码 真实项目中请移除
       production remove this Ads
     -->
-    <ads v-if="isProPreviewSite && !collapsed"/>
     <!-- Ads end -->
 
     <!-- 1.0.0+ 版本 pro-layout 提供 API，
@@ -31,7 +30,7 @@
     <template v-slot:headerContentRender>
       <div>
         <a-tooltip title="刷新页面">
-          <a-icon type="reload" style="font-size: 18px;cursor: pointer;" @click="() => { $message.info('只是一个DEMO') }" />
+          <a-icon type="reload" style="font-size: 18px;cursor: pointer;" @click="reload" />
         </a-tooltip>
       </div>
     </template>
@@ -48,7 +47,7 @@
     <template v-slot:footerRender>
       <global-footer />
     </template>
-    <router-view />
+    <router-view v-if="alive" />
   </pro-layout>
 </template>
 
@@ -104,7 +103,8 @@ export default {
       query: {},
 
       // 是否手机模式
-      isMobile: false
+      isMobile: false,
+      alive: true
     }
   },
   computed: {
@@ -158,6 +158,12 @@ export default {
     },
     handleCollapse (val) {
       this.collapsed = val
+    },
+    reload () {
+      this.alive = false
+      this.$nextTick(() => {
+        this.alive = true
+      })
     },
     handleSettingChange ({ type, value }) {
       console.log('type', type, value)

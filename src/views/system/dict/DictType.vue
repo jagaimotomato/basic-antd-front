@@ -315,9 +315,9 @@
                   _self.$message.success('删除成功')
                   resolve()
                 } else if (res.code === 400) {
-                  reject(res.message)
+                  reject(res.msg)
                 } else {
-                  reject(res.message)
+                  reject(res.msg)
                 }
               })
             }).catch((err) => _self.$message.error(err))
@@ -341,7 +341,7 @@
                   _self.$refs.table.refresh()
                   resolve()
                 } else {
-                  reject(res.message)
+                  reject(res.msg)
                 }
               })
             }).catch((err) => _self.$message.error(err))
@@ -362,7 +362,7 @@
                   this.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             } else {
@@ -372,7 +372,7 @@
                   this.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             }

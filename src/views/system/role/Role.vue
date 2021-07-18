@@ -237,6 +237,23 @@
             ></a-tree>
           </a-form-model-item>
         </a-row>
+        <a-divider>api权限</a-divider>
+        <a-row>
+          <a-form-model-item
+            label="api权限"
+            :labelCol="labelCol"
+            :wrapperCol="wrapperCol"
+          >
+            <a-tree
+              :disabled="disabled"
+              :tree-data="apiTree.treeData"
+              v-model="apiIds"
+              :replaceFields="apiTree.replaceFields"
+              @check="onApiCheck"
+              checkable
+            ></a-tree>
+          </a-form-model-item>
+        </a-row>
       </a-form-model>
       <template slot="footer">
         <a-button key="back" @click="handleCancel">
@@ -251,292 +268,390 @@
 </template>
 
 <script>
-  import { STable } from '@/components'
-  import { getPage, create, update, get, del, updateStatus } from '@/api/system/role'
-  import { getTree, getRoleTree } from '@/api/system/permission'
-  import { PERMISSION_ENUM } from '@/core/permission/permission'
+import { STable } from '@/components'
+import { getPage, create, update, get, del, updateStatus } from '@/api/system/role'
+import { getList, getCasbinList } from '@/api/system/api'
+import { getTree, getRoleTree } from '@/api/system/permission'
+import { PERMISSION_ENUM } from '@/core/permission/permission'
 
-  const STATUS = {
-    1: '启用',
-    2: '禁用'
-  }
-  export default {
-    name: 'Role',
-    components: {
-      STable
-    },
-    data () {
-      return {
-        labelCol: {
-          xs: { span: 24 },
-          sm: { span: 5 }
-        },
-        wrapperCol: {
-          xs: { span: 24 },
-          sm: { span: 16 }
-        },
-        description: '列表使用场景：后台管理中的权限管理以及角色管理，可用于基于 RBAC 设计的角色权限控制，颗粒度细到每一个操作类型。',
-        visible: false,
-        form: {},
-        mdl: {},
+const STATUS = {
+  1: '启用',
+  2: '禁用'
+}
+export default {
+  name: 'Role',
+  components: {
+    STable
+  },
+  data () {
+    return {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 5 }
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 16 }
+      },
+      description: '列表使用场景：后台管理中的权限管理以及角色管理，可用于基于 RBAC 设计的角色权限控制，颗粒度细到每一个操作类型。',
+      visible: false,
+      form: {},
+      mdl: {},
 
-        // 高级搜索 展开/关闭
-        advanced: false,
-        // 查询参数
-        queryParam: {},
-        // 表头
-        columns: [
-          {
-            title: '唯一识别码',
-            dataIndex: 'roleKey'
-          },
-          {
-            title: '角色名称',
-            dataIndex: 'name'
-          },
-          {
-            title: '状态',
-            dataIndex: 'status',
-            scopedSlots: { customRender: 'status' }
-          },
-          {
-            title: '排序',
-            dataIndex: 'sort',
-            align: 'center',
-            sorter: (a, b) => a.sort - b.sort,
-            sortDirections: ['descend']
-          },
-          {
-            title: '创建时间',
-            dataIndex: 'createdAt',
-            scopedSlots: { customRender: 'createTime' },
-            sorter: true
-          },
-          {
-            title: '操作',
-            width: '150px',
-            dataIndex: 'action',
-            scopedSlots: { customRender: 'action' }
-          }
-        ],
-        // 加载数据方法 必须为 Promise 对象
-        loadData: parameter => {
-          return getPage(Object.assign(parameter, this.queryParam)).then(res => {
-            // this.expandedRowKeys = res.result.list.map(item => item.roleId)
-            const result = res.result
-            return result
-          })
+      // 高级搜索 展开/关闭
+      advanced: false,
+      // 查询参数
+      queryParam: {},
+      // 表头
+      columns: [
+        {
+          title: '唯一识别码',
+          dataIndex: 'roleKey'
         },
-        expandedRowKeys: [],
-        selectedRowKeys: [],
-        selectedRows: [],
-        title: '',
-        disabled: false,
-        tree: {
-          treeData: [],
-          replaceFields: {
-            children: 'children',
-            title: 'title',
-            key: 'permissionId'
-          }
+        {
+          title: '角色名称',
+          dataIndex: 'name'
         },
-        rules: {
-          roleKey: [ { required: true, message: '请输入唯一识别码', trigger: 'blur' } ],
-          name: [ { required: true, message: '请输入角色名称', trigger: 'blur' } ]
+        {
+          title: '状态',
+          dataIndex: 'status',
+          scopedSlots: { customRender: 'status' }
         },
-        /* 多个禁用修改按钮 */
-        single: true,
-        /* 非0个开启删除按钮 */
-        multiple: true
-      }
-    },
-    filters: {
-      statusFilter (key) {
-        return STATUS[key]
-      },
-      permissionFilter (key) {
-        const permission = PERMISSION_ENUM[key]
-        return permission && permission.label
-      }
-    },
-    methods: {
-      handleEdit (record) {
-        this.reset()
-        const roleId = record.roleId || this.selectedRowKeys
-        this.getPermissionTree()
-        get(roleId).then(res => {
-          this.form = res.result
-          this.title = '修改角色'
-          this.disabled = false
-          this.getRolePermissionTree(roleId)
-          this.visible = true
-        })
-      },
-      toggleAdvanced () {
-        this.advanced = !this.advanced
-      },
-      reset () {
-        this.form = {
-          roleId: undefined,
-          name: undefined,
-          roleKey: undefined,
-          sort: 0,
-          status: '1',
-          permissionIds: []
+        {
+          title: '排序',
+          dataIndex: 'sort',
+          align: 'center',
+          sorter: (a, b) => a.sort - b.sort,
+          sortDirections: ['descend']
+        },
+        {
+          title: '创建时间',
+          dataIndex: 'createdAt',
+          scopedSlots: { customRender: 'createTime' },
+          sorter: true
+        },
+        {
+          title: '操作',
+          width: '150px',
+          dataIndex: 'action',
+          scopedSlots: { customRender: 'action' }
         }
-        this.resetForm('form')
-      },
-      handleQuery (flag) {
-        switch (flag) {
-          case 0:
-            this.queryParam = {}
-            break
-          case 1:
-            break
-        }
-        this.$refs.table.refresh()
-      },
-      handleAdd () {
-        this.reset()
-        this.getPermissionTree()
-        this.title = '添加角色'
-        this.disabled = false
-        this.visible = true
-      },
-      handleGet (record) {
-        this.reset()
-        const roleId = record.roleId
-        this.getPermissionTree()
-        get(roleId).then(res => {
-          this.form = res.result
-          this.title = '菜单详情'
-          this.disabled = true
-          this.getRolePermissionTree(roleId)
-          this.visible = true
+      ],
+      // 加载数据方法 必须为 Promise 对象
+      loadData: parameter => {
+        return getPage(Object.assign(parameter, this.queryParam)).then(res => {
+          // this.expandedRowKeys = res.result.list.map(item => item.roleId)
+          const result = res.result
+          return result
         })
       },
-      /** 删除按钮操作 */
-      handleDel (record) {
-        const roleIds = record.roleId || this.selectedRowKeys
-        const _self = this
-        this.$confirm({
-          title: '提示',
-          content: '是否确认删除角色编号为"' + roleIds + '"的数据项?',
-          onOk () {
-            return new Promise((resolve, reject) => {
-              del(roleIds).then(res => {
-                if (res.code === 200) {
-                  _self.$refs.table.refresh()
-                  _self.$message.success('删除成功')
-                  resolve()
-                } else if (res.code === 400) {
-                  reject(res.message)
-                } else {
-                  reject(res.message)
-                }
-              })
-            }).catch((err) => _self.$message.error(err))
-          }
-        })
-      },
-      handleStatus (checked, record) {
-        console.log(checked, record)
-        const text = checked ? '启用' : '停用'
-        const _self = this
-        this.$confirm({
-          title: '提示',
-          content: '确认要' + text + '识别码为"' + record.roleKey + '"角色吗?',
-          onOk () {
-            return new Promise((resolve, reject) => {
-              _self.form.status = record.status === '1' ? '0' : '1'
-              _self.form.roleId = record.roleId
-              updateStatus(_self.form).then(res => {
-                if (res.code === 200) {
-                  _self.$message.success('修改成功')
-                  _self.$refs.table.refresh()
-                  resolve()
-                } else {
-                  reject(res.message)
-                }
-              })
-            }).catch((err) => _self.$message.error(err))
-          }
-        })
-      },
-      handleCancel () {
-        this.visible = false
-        this.reset()
-      },
-      submitForm () {
-        this.$refs.form.validate(valid => {
-          if (valid) {
-            if (this.form.roleId !== undefined) {
-              update(this.form).then(res => {
-                if (res.code === 200) {
-                  this.$message.success('修改成功')
-                  this.visible = false
-                  this.$refs.table.refresh()
-                } else {
-                  this.$message.error(res.message)
-                }
-              })
-            } else {
-              create(this.form).then(res => {
-                if (res.code === 200) {
-                  this.$message.success('新增成功')
-                  this.visible = false
-                  this.$refs.table.refresh()
-                } else {
-                  this.$message.error(res.message)
-                }
-              })
-            }
-          }
-        })
-      },
-      handleExpand (expanded, record) {
-        console.log('expanded', expanded, record)
-        if (expanded) {
-          this.expandedRowKeys.push(record.roleId)
-        } else {
-          this.expandedRowKeys = this.expandedRowKeys.filter(item => record.roleId !== item)
+      expandedRowKeys: [],
+      selectedRowKeys: [],
+      selectedRows: [],
+      title: '',
+      disabled: false,
+      tree: {
+        treeData: [],
+        replaceFields: {
+          children: 'children',
+          title: 'title',
+          key: 'permissionId'
         }
       },
-      onSelectChange (selectedRowKeys, selectedRows) {
-        this.selectedRowKeys = selectedRowKeys
-        this.selectedRows = selectedRows
-        this.multiple = selectedRowKeys.length === 0
-        this.single = selectedRowKeys.length !== 1
-      },
-      /* 菜单树 */
-      getPermissionTree () {
-        getTree().then(res => {
-          this.tree.treeData = res.result
-        })
-      },
-      getRolePermissionTree (roleId) {
-        getRoleTree(roleId).then(res => {
-          this.form.permissionIds = res.result
-        })
-      },
-      onCheck (checkedKeys, info) {
-        // console.log('onCheck', checkedKeys, info)
-        // console.log('ids', this.form.permissionIds)
-      }
-    },
-    watch: {
-      /*
-        'selectedRows': function (selectedRows) {
-          this.needTotalList = this.needTotalList.map(item => {
-            return {
-              ...item,
-              total: selectedRows.reduce( (sum, val) => {
-                return sum + val[item.dataIndex]
-              }, 0)
-            }
-          })
+      apiTree: {
+        treeData: [],
+        replaceFields: {
+          children: 'children',
+          title: 'desc',
+          key: 'onlyId'
         }
-        */
+      },
+      apiTreeIds: [],
+      rules: {
+        roleKey: [ { required: true, message: '请输入唯一识别码', trigger: 'blur' } ],
+        name: [ { required: true, message: '请输入角色名称', trigger: 'blur' } ]
+      },
+      /* 多个禁用修改按钮 */
+      single: true,
+      /* 非0个开启删除按钮 */
+      multiple: true,
+      childrenIds: [], // 存放所有子节点id
+      permissionIds: [], // 需要提交的permissionId
+      apiCheckedNodes: [], // 选择的api nodes
+      apiIds: []
     }
+  },
+  filters: {
+    statusFilter (key) {
+      return STATUS[key]
+    },
+    permissionFilter (key) {
+      const permission = PERMISSION_ENUM[key]
+      return permission && permission.label
+    }
+  },
+  async created () {
+    const res = await getList()
+    this.apiTree.treeData = this.genApiTree(res.result)
+    console.log(this.apiTree.treeData)
+  },
+  methods: {
+    handleEdit (record) {
+      this.reset()
+      const roleId = record.roleId || this.selectedRowKeys
+      this.getPermissionTree()
+      get(roleId).then(res => {
+        this.form = res.result
+        this.title = '修改角色'
+        this.disabled = false
+        this.getRolePermissionTree(roleId)
+        this.handleCasbinIds(record.roleKey)
+        this.visible = true
+      })
+    },
+    async handleCasbinIds (roleKey) {
+      const res = await getCasbinList(roleKey)
+      res.result && res.result.map(item => {
+        this.apiIds.push('p:' + item.v1 + 'm:' + item.v2)
+      })
+    },
+    toggleAdvanced () {
+      this.advanced = !this.advanced
+    },
+    reset () {
+      this.form = {
+        roleId: undefined,
+        name: undefined,
+        roleKey: undefined,
+        sort: 0,
+        status: '1',
+        permissionIds: [],
+        apis: []
+      }
+      this.apiIds = []
+      this.resetForm('form')
+    },
+    handleQuery (flag) {
+      switch (flag) {
+        case 0:
+          this.queryParam = {}
+          break
+        case 1:
+          break
+      }
+      this.$refs.table.refresh()
+    },
+    handleAdd () {
+      this.reset()
+      this.getPermissionTree()
+      this.title = '添加角色'
+      this.disabled = false
+      this.visible = true
+    },
+    handleGet (record) {
+      this.reset()
+      const roleId = record.roleId
+      this.getPermissionTree()
+      get(roleId).then(res => {
+        this.form = res.result
+        this.title = '菜单详情'
+        this.disabled = true
+        this.handleCasbinIds(record.roleKey)
+        this.getRolePermissionTree(roleId)
+        this.visible = true
+      })
+    },
+    /** 删除按钮操作 */
+    handleDel (record) {
+      const roleIds = record.roleId || this.selectedRowKeys
+      const _self = this
+      this.$confirm({
+        title: '提示',
+        content: '是否确认删除角色编号为"' + roleIds + '"的数据项?',
+        onOk () {
+          return new Promise((resolve, reject) => {
+            del(roleIds).then(res => {
+              if (res.code === 200) {
+                _self.$refs.table.refresh()
+                _self.$message.success('删除成功')
+                resolve()
+              } else if (res.code === 400) {
+                reject(res.msg)
+              } else {
+                reject(res.msg)
+              }
+            })
+          }).catch((err) => _self.$message.error(err))
+        }
+      })
+    },
+    handleStatus (checked, record) {
+      console.log(checked, record)
+      const text = checked ? '启用' : '停用'
+      const _self = this
+      this.$confirm({
+        title: '提示',
+        content: '确认要' + text + '识别码为"' + record.roleKey + '"角色吗?',
+        onOk () {
+          return new Promise((resolve, reject) => {
+            _self.form.status = record.status === '1' ? '0' : '1'
+            _self.form.roleId = record.roleId
+            updateStatus(_self.form).then(res => {
+              if (res.code === 200) {
+                _self.$message.success('修改成功')
+                _self.$refs.table.refresh()
+                resolve()
+              } else {
+                reject(res.msg)
+              }
+            })
+          }).catch((err) => _self.$message.error(err))
+        }
+      })
+    },
+    handleCancel () {
+      this.visible = false
+      this.reset()
+    },
+    submitForm () {
+      this.$refs.form.validate(valid => {
+        const casbin = []
+        const apiCheckNodes = this.apiCheckedNodes
+        apiCheckNodes && apiCheckNodes.map(item => {
+          const casbinInfo = {
+            path: item.data.props.path,
+            method: item.data.props.method
+          }
+          if (item.key !== undefined) {
+            casbin.push(casbinInfo)
+          }
+        })
+        this.form.permissionIds = this.permissionIds
+        this.form.apis = casbin
+        if (valid) {
+          if (this.form.roleId !== undefined) {
+            update(this.form).then(res => {
+              if (res.code === 200) {
+                this.$message.success('修改成功')
+                this.visible = false
+                this.$refs.table.refresh()
+              } else {
+                this.$message.error(res.msg)
+              }
+            })
+          } else {
+            create(this.form).then(res => {
+              if (res.code === 200) {
+                this.$message.success('新增成功')
+                this.visible = false
+                this.$refs.table.refresh()
+              } else {
+                this.$message.error(res.msg)
+              }
+            })
+          }
+        }
+      })
+    },
+    handleExpand (expanded, record) {
+      console.log('expanded', expanded, record)
+      if (expanded) {
+        this.expandedRowKeys.push(record.roleId)
+      } else {
+        this.expandedRowKeys = this.expandedRowKeys.filter(item => record.roleId !== item)
+      }
+    },
+    onSelectChange (selectedRowKeys, selectedRows) {
+      this.selectedRowKeys = selectedRowKeys
+      this.selectedRows = selectedRows
+      this.multiple = selectedRowKeys.length === 0
+      this.single = selectedRowKeys.length !== 1
+    },
+    /* 菜单树 */
+    getPermissionTree () {
+      this.childrenIds = []
+      getTree().then(res => {
+        this.tree.treeData = res.result
+        this.allChildrenList(res.result)
+        // console.log(this.childrenIds)
+      })
+    },
+    getRolePermissionTree (roleId) {
+      getRoleTree(roleId).then(res => {
+        this.form.permissionIds = this.uniqueTree(res.result, this.childrenIds)
+      })
+    },
+    onCheck (checkedKeys, info) {
+      // console.log('onCheck', checkedKeys, info)
+      // console.log('ids', this.form.permissionIds)
+      /* console.log(info.halfCheckedKeys) */
+      this.permissionIds = checkedKeys.concat(info.halfCheckedKeys)
+      // console.log(this.permissionIds)
+      // console.log(info.halfCheckedKeys, this.form.permissionIds)
+    },
+    onApiCheck (checkedKeys, info) {
+      // console.log('onCheck', checkedKeys, info)
+      // console.log('ids', this.form.permissionIds)
+      /* console.log(info.halfCheckedKeys) */
+      // console.log(this.permissionIds)
+      console.log(info.checkedNodes, checkedKeys)
+      this.apiCheckedNodes = info.checkedNodes
+    },
+    allChildrenList (data) {
+      data.map(item => {
+        if (item.children && item.children.length > 0) {
+          this.allChildrenList(item.children)
+        } else {
+          this.childrenIds.push(item.permissionId)
+        }
+      })
+    },
+    uniqueTree (uniqueArr, arr) {
+      const uniqueChild = []
+      for (const i in arr) {
+        for (const k in uniqueArr) {
+          if (uniqueArr[k] === arr[i]) {
+            uniqueChild.push(uniqueArr[k])
+          }
+        }
+      }
+      return uniqueChild
+    },
+    genApiTree (apis) {
+      const apiObj = {}
+      apis && apis.map(item => {
+        item.onlyId = 'p:' + item.path + 'm:' + item.method
+        if (Object.prototype.hasOwnProperty.call(apiObj, item.group)) {
+          apiObj[item.group].push(item)
+        } else {
+          Object.assign(apiObj, { [item.group]: [item] })
+        }
+      })
+      const apiTree = []
+      for (const key in apiObj) {
+        const treeNode = {
+          id: key,
+          desc: key + '组',
+          children: apiObj[key]
+        }
+        apiTree.push(treeNode)
+      }
+      return apiTree
+    }
+  },
+  watch: {
+    /*
+      'selectedRows': function (selectedRows) {
+        this.needTotalList = this.needTotalList.map(item => {
+          return {
+            ...item,
+            total: selectedRows.reduce( (sum, val) => {
+              return sum + val[item.dataIndex]
+            }, 0)
+          }
+        })
+      }
+      */
   }
+}
 </script>

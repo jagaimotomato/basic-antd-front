@@ -104,6 +104,7 @@
               </a-row>
             </a-col>
           </a-row>
+          <span slot="created_at" slot-scope="text">{{ text | moment }}</span>
           <a-row type="flex" slot="role" slot-scope="text, record">
             <a-col v-for="item in record.roles" :key="item.roleId" style="margin-bottom: 5px">
               <a-tag color="orange">
@@ -372,8 +373,9 @@
           },
           {
             title: '创建时间',
-            dataIndex: 'createdAt',
-            sorter: true
+            dataIndex: 'created_at',
+            scopedSlots: { customRender: 'created_at' },
+            sorter: (a, b) => { return new Date(a.created_at).getTime() - new Date(b.created_at).getTime() }
           },
           {
             title: '操作',
@@ -476,7 +478,7 @@
                   _this.$refs.table.refresh()
                   resolve()
                 } else {
-                  reject(res.message)
+                  reject(res.msg)
                 }
               })
             }).catch((err) => _this.$message.error(err))
@@ -562,9 +564,9 @@
                   _self.$message.success('删除成功')
                   resolve()
                 } else if (res.code === 400) {
-                  reject(res.message)
+                  reject(res.msg)
                 } else {
-                  reject(res.message)
+                  reject(res.msg)
                 }
               })
             }).catch((err) => _self.$message.error(err))
@@ -581,7 +583,7 @@
                   this.modal.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             } else {
@@ -591,7 +593,7 @@
                   this.modal.visible = false
                   this.$refs.table.refresh()
                 } else {
-                  this.$message.error(res.message)
+                  this.$message.error(res.msg)
                 }
               })
             }

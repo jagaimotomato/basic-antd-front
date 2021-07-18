@@ -135,7 +135,7 @@
             this.getUser()
             this.$message.success('修改成功')
           } else {
-            this.$message.error(res.message)
+            this.$message.error(res.msg)
           }
         })
       }
